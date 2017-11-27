@@ -11,7 +11,7 @@ int main(int argc, char const *argv[])
         cout << "Invald number of command line arguments" << endl;
         return 1;
     }
-    string alphabet_file_name = argv[1]n;
+    string alphabet_file_name = argv[1];
     AdaptiveHuffman tree(alphabet_file_name);
 
     string *message_file_name = new string(argv[2]);

@@ -2,6 +2,7 @@
 #define __ADAPTIVEHUFFMAN_H__
 #include <string>
 #include <fstream>
+#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -72,7 +73,8 @@ public:
      **/
     node *root;
 
-    int encode(string *msg, char **result, int rbuff_size);
+    node *zeroNode;
+
     int decode(string *msg, char **result, int rbuff_size);
 
     /**
@@ -83,14 +85,14 @@ public:
      **/
     AdaptiveHuffman(string alphabet)
     {   
-	root = new node;
-	root->count = 0;
-        root->key = '\0';
-        root->left = nullptr;
-        root->right = nullptr;
-        root->parent = nullptr;
-        root->next = nullptr;
-        root->prev = nullptr;
+	zeroNode = new node;
+	zeroNode->count = 0;
+        zeroNode->key = '\0';
+        zeroNode->left = nullptr;
+        zeroNode->right = nullptr;
+        zeroNode->parent = nullptr;
+        zeroNode->next = nullptr;
+        zeroNode->prev = nullptr;
 
         char c;
         ifstream file(alphabet);
@@ -134,7 +136,7 @@ public:
         node* newEmptNode;
 	newEmptNode = new node;
         newEmptNode->count = 0;
-        newEmptNode->key = 'p';
+        newEmptNode->key = '\0';
         newEmptNode->left = nullptr;
         newEmptNode->right = nullptr;
         newEmptNode->parent = nullptr;
@@ -143,8 +145,8 @@ public:
 
         node* current;
         node* p;
-        p = root;
-        current = root->right;
+        p = zeroNode;
+        current = zeroNode->right;
         while(current != NULL)
         {
             p = current;
@@ -159,7 +161,7 @@ public:
 	//after every insertion the tree will print
 	if (DEBUG)
 	{
-	    printZeroNode(root);
+	    printZeroNode(zeroNode);
 	    cout << endl;
 	    cout << "_____________________________" << endl;
 	}
@@ -170,31 +172,30 @@ public:
     **/
     void printZeroNode(node* p)
     {
-	int cnt = 0;
 	char letter;
 	string path;
 
-	if (p == root)
+	if (p == zeroNode)
 	{
-	    cout << "At root" << endl;
+	    cout << "At zeroNode" << endl;
 	    p = p->right;
 	}
 	while (p != NULL)
 	{
-	    //cout << "Count = " << cnt << endl;
 	    cout << (p->left)->key << endl;
 	    letter = p->left->key;
-	    path = getCode(root, letter);
+	    path = getCode(zeroNode, letter);
+	    reverse(path.begin(),path.end());
 	    cout << path << endl;
-	    //cnt++;
 	    p = p->right;
 	}
     }
 
+    //Finds a node in the tree based on its value and gets the path to the root from that node.
     string getCode(node* p, char c)
     {
 	node* current;
-	string path;
+	static string path;
 
 	if (p->left)
 	{
@@ -228,8 +229,10 @@ public:
 		    getCode(p->right, c);
 		}
 	}
+    return path;
     }
 
+    //Records the path from a node to the root
     string pathToRoot(node* p)
     {
 	node* current = p;
@@ -248,6 +251,86 @@ public:
 	    p = current;
 	}
 	return path;
+    }
+
+    //Checks if a value is in the zeroNode
+    bool itemSeenCheck(node* p, char c)
+    {
+	if (p == zeroNode)
+	{
+	    cout << "At zeroNode" << endl;
+	    p = p->right;
+	}
+	while (p != NULL)
+	{
+	    if (p->left->key == c)
+	    {
+		return true;
+	    }
+	    else
+	    {
+		p = p->right;
+	    }
+	}
+    return false;
+    }
+
+    //Swaps a value node and its parent out from the zeroNode into the tree.
+    void itemNotSeen(node* p, char c)
+    {
+	node* temp;
+	node* end = zeroNode;
+
+	while (end != NULL)
+	{
+	    end = end->right;
+	}
+
+	if (p == zeroNode)
+	{
+	    p = p->right;
+	}
+	while (p != NULL)
+	{
+	    if (p->left->key == c)
+	    {
+		//do swap
+		if (p->right != NULL)
+		{
+		    temp = p->right;
+		    end->right = temp;
+		    end->parent = temp->parent;
+		    temp->parent = end;
+
+		    p->right = p->left;
+		    p->left = zeroNode;
+		    zeroNode->parent = p;
+		    p->count = 1;
+		}
+		else
+		{
+		    p->parent->right = NULL;
+		    p->right = p->left;
+		    p->left = zeroNode;
+		    zeroNode->parent = p;
+		    p->count = 1;
+		}
+	    }
+	    else
+	    {
+		p = p->right;
+	    }
+	}
+    }
+
+    void swapNodes()
+    {
+	
+    }
+
+    int encode(string *msg, char **result, int rbuff_size)
+    {
+	
     }
 
     /**
