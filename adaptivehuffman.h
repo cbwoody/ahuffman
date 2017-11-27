@@ -1,6 +1,7 @@
 #ifndef __ADAPTIVEHUFFMAN_H__
 #define __ADAPTIVEHUFFMAN_H__
 #include <string>
+#include <fstream>
 
 using namespace std;
 
@@ -48,6 +49,8 @@ using namespace std;
 class AdaptiveHuffman
 {
 public:
+    bool DEBUG = true;
+
     /**
      * Node is a structure containing the Huffman Node pointers and the values for key 
      * (the char value from the alphabet) and count (the number of times the character 
@@ -62,15 +65,15 @@ public:
              *prev;
         int count;
         char key;
-    }
-
-    int encode(string *msg, char **result, int rbuff_size);
-    int decode(string *msg, char **result, int rbuff_size);
+    };
 
     /**
      * Pointer to the root of the tree.
      **/
-    *root;
+    node *root;
+
+    int encode(string *msg, char **result, int rbuff_size);
+    int decode(string *msg, char **result, int rbuff_size);
 
     /**
      * Constructor for the adaptive huffman tree will build the zero node from
@@ -78,24 +81,37 @@ public:
      * @param alphabet a pointer to a string of characters that will be used 
      * as the alphabet.
      **/
-    AdaptiveHuffman(string *alphabet)
-    {
-        for(char& c : alphabet)
+    AdaptiveHuffman(string alphabet)
+    {   
+	root = new node;
+	root->count = 0;
+        root->key = '\0';
+        root->left = nullptr;
+        root->right = nullptr;
+        root->parent = nullptr;
+        root->next = nullptr;
+        root->prev = nullptr;
+
+        char c;
+        ifstream file(alphabet);
+
+        if(!file)
         {
-            insertZeroNode(c);
+            cout << "Could not open file." << endl;
+            exit(1);
+        }
+        else
+        {
+            while (file >> c)
+            {
+                insertZeroNode(c);
+            }
+            file.close();
         }
     }
 
     //Deconstructor
-    ~AdaptiveHuffman();
-    
-    /**
-     * Returns value of if the root is null.
-     **/
-    bool isEmpty()
-    {
-        return root == NULL;
-    }
+    //~AdaptiveHuffman();
 
     /**
      * Creates a new node to be inserted in the zero node. It will walk the 
@@ -106,6 +122,7 @@ public:
     void insertZeroNode(char c)
     {
         node* newValNode;
+	newValNode = new node;
         newValNode->count = 0;
         newValNode->key = c;
         newValNode->left = nullptr;
@@ -115,36 +132,176 @@ public:
         newValNode->prev = nullptr;
 
         node* newEmptNode;
+	newEmptNode = new node;
         newEmptNode->count = 0;
-        newEmptNode->key = NULL;
+        newEmptNode->key = 'p';
         newEmptNode->left = nullptr;
         newEmptNode->right = nullptr;
         newEmptNode->parent = nullptr;
         newEmptNode->next = nullptr;
         newEmptNode->prev = nullptr;
 
-        if (isEmpty())
+        node* current;
+        node* p;
+        p = root;
+        current = root->right;
+        while(current != NULL)
         {
-            root = newEmptNode;
+            p = current;
+            current = current->right;
         }
-        else
-        {
-            node* current;
-            node* p;
-            p = root;
-            current = root->right;
-            while(current)
-            {
-                p = current;
-                current = current->right;
-            }
-            p->right = newEmptNode;
-            newEmptNode->parent = p;
-            
-            newEmptNode->left = newValNode;
-            newValNode->parent = newEmptNode;
-        }
+        p->right = newEmptNode;
+        newEmptNode->parent = p;
+        
+        newEmptNode->left = newValNode;
+        newValNode->parent = newEmptNode;
+        
+	//after every insertion the tree will print
+	if (DEBUG)
+	{
+	    printZeroNode(root);
+	    cout << endl;
+	    cout << "_____________________________" << endl;
+	}
     }
+
+    /**
+    * 
+    **/
+    void printZeroNode(node* p)
+    {
+	int cnt = 0;
+	char letter;
+	string path;
+
+	if (p == root)
+	{
+	    cout << "At root" << endl;
+	    p = p->right;
+	}
+	while (p != NULL)
+	{
+	    //cout << "Count = " << cnt << endl;
+	    cout << (p->left)->key << endl;
+	    letter = p->left->key;
+	    path = getCode(root, letter);
+	    cout << path << endl;
+	    //cnt++;
+	    p = p->right;
+	}
+    }
+
+    string getCode(node* p, char c)
+    {
+	node* current;
+	string path;
+
+	if (p->left)
+	{
+		if (p->left->key == c)
+		{
+		    current = p->left;
+		    path = pathToRoot(current);
+		    return path;
+		}
+		else
+		{
+		    getCode(p->left, c);
+		}
+	}
+	if (p->key == c)
+		{
+		    current = p;
+		    path = pathToRoot(current);
+		    return path;
+		}
+	if (p->right)
+	{
+		if (p->right->key == c)
+		{
+		    current = p->right;
+		    path = pathToRoot(current);
+		    return path;
+		}
+		else
+		{
+		    getCode(p->right, c);
+		}
+	}
+    }
+
+    string pathToRoot(node* p)
+    {
+	node* current = p;
+	string path;
+	while(current->parent != NULL)
+	{
+	    current = current->parent;
+	    if (current->left == p)
+	    {
+		path = path + "0";
+	    }
+	    else
+	    {
+		path = path + "1";
+	    }
+	    p = current;
+	}
+	return path;
+    }
+
+    /**
+    * Prints the tree.
+    * @param p root node to start printing from.
+    **/
+	void print(node* p)
+	{
+		if (p != NULL)
+		{
+			if (p->left)
+			{
+				print(p->left);
+			}
+			cout << endl;
+			cout << "Printed key: " << p->key << endl;
+			if (DEBUG)
+			{
+				cout << endl;
+				if ((p->parent) != NULL)
+				{
+					cout << " printed parent: " << (p->parent)->key;
+				}
+				else
+				{
+					cout << " Printed Parent is NULL. ";
+				}
+				if ((p->left) != NULL)
+				{
+					cout << ", printed left: " << (p->left)->key;
+				}
+				else
+				{
+					cout << " Printed left is NULL. ";
+				}
+				if ((p->right) != NULL)
+				{
+					cout << ", printed right: " << (p->right)->key;
+				}
+				else
+				{
+					cout << " Printed right is NULL. ";
+				}
+			}
+			if (p->right)
+			{
+				print(p->right);
+			}
+		}
+		else
+		{
+			return;
+		}
+	}
 };
 
 #endif
